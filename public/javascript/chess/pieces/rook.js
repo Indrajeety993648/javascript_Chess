@@ -1,12 +1,21 @@
-var Rook = function(config, board) {
+// Rook Constructor
+var Rook = function(config) {
     this.type = 'rook';
-    this.board = board; // Store a reference to the board
-    this.constructor(config);
+    Piece.call(this, config); // Call parent constructor
 };
 
-Rook.prototype = new Piece({});
+// Inherit from Piece
+Rook.prototype = Object.create(Piece.prototype);
+Rook.prototype.constructor = Rook;
 
+// Method to check if the move is valid for the rook
 Rook.prototype.isValidMove = function(targetPosition) {
+    if (!targetPosition || !targetPosition.col || !targetPosition.row) {
+        console.warn("Invalid target position");
+        return false;
+    }
+
+    // Convert current and target positions to 0-based indices
     let currentCol = this.position.charCodeAt(0) - 65; // Convert A-H to 0-7
     let currentRow = parseInt(this.position.charAt(1)) - 1; // Convert 1-8 to 0-7
     let targetCol = targetPosition.col.charCodeAt(0) - 65;
@@ -18,53 +27,15 @@ Rook.prototype.isValidMove = function(targetPosition) {
         return false;
     }
 
-    // Determine direction of movement
-    let colStep = currentCol === targetCol ? 0 : (targetCol > currentCol ? 1 : -1);
-    let rowStep = currentRow === targetRow ? 0 : (targetRow > currentRow ? 1 : -1);
-
-    // Check for pieces blocking the path
-    let col = currentCol + colStep;
-    let row = currentRow + rowStep;
-    while (col !== targetCol || row !== targetRow) {
-        let pieceInPath = this.board.getPieceAt({
-            col: String.fromCharCode(col + 65),
-            row: (row + 1).toString()
-        });
-        if (pieceInPath) {
-            console.warn("Invalid move for rook: piece blocking path");
-            return false;
-        }
-        col += colStep;
-        row += rowStep;
-    }
-
-    // Check if there's a piece at the target position
-    let pieceAtTarget = this.board.getPieceAt(targetPosition);
-    if (pieceAtTarget) {
-        if (pieceAtTarget.color === this.color) {
-            console.warn("Invalid move for rook: cannot capture own piece");
-            return false;
-        } else {
-            return 'capture'; // Valid capture move
-        }
-    }
-
-    return true; // Valid move
+    // If move is horizontal or vertical, it's valid (ignoring board/blocking logic)
+    return true;
 };
 
-Rook.prototype.move = function(targetPosition) {
+// Method to move the rook to the target position
+Rook.prototype.moveTo = function(targetPosition) {
     const result = this.isValidMove(targetPosition);
     if (result === true) {
         // Move the rook to the new position
-        this.position = targetPosition.col + targetPosition.row;
-        this.render();
-        return true;
-    } else if (result === 'capture') {
-        // Capture the piece and move
-        let pieceToCapture = this.board.getPieceAt(targetPosition);
-        if (pieceToCapture) {
-            pieceToCapture.kill();
-        }
         this.position = targetPosition.col + targetPosition.row;
         this.render();
         return true;
@@ -72,9 +43,15 @@ Rook.prototype.move = function(targetPosition) {
     return false; // Invalid move
 };
 
+// Method to "remove" the rook (capture)
 Rook.prototype.kill = function() {
     if (this.$el && this.$el.parentNode) {
         this.$el.parentNode.removeChild(this.$el);
     }
-    this.position = null;
+    this.position = null; // Clear the position
+};
+
+// Render method (inherits from Piece)
+Rook.prototype.render = function() {
+    Piece.prototype.render.call(this); // Call the parent render method
 };
