@@ -1,6 +1,7 @@
 var Board = function(config){
     this.root_id = config.root_id;
     this.$el = document.getElementById(this.root_id);
+    this.currentPlayer = 'white';
     this.generateBoardDom();
     this.addListeners();
 }
@@ -29,7 +30,7 @@ Board.prototype.generateBoardDom = function(config){
 Board.prototype.getClickedBlock = function(clickEvent){
     // Get the clicked block
     const clickedCell = clickEvent.target.closest('li');
-        
+    
     if (clickedCell) {
         // Extract row and column from data attributes
         const row = clickedCell.getAttribute('data-row');
@@ -60,10 +61,24 @@ Board.prototype.clearSelection = function(){
 Board.prototype.boardClicked = function(event){    
     this.clearSelection();    
     const clickedCell = this.getClickedBlock(event);
-    const selectedPiece = this.getPieceAt(clickedCell)
+    const selectedPiece = this.getPieceAt(clickedCell);
+
     if(selectedPiece){
+        //it is opponent's turn
+        if(!this.selectedPiece && this.currentPlayer !== selectedPiece.color){
+            console.warn(`It's ${this.currentPlayer}'s turn!`);
+            this.invalidMove();
+            return;
+        }
         //Add 'selected' class to the clicked piece    
-        this.selectPiece(event.target, selectedPiece);
+        if(selectedPiece && this.currentPlayer === selectedPiece.color){
+            this.selectPiece(event.target, selectedPiece);
+        } else {
+            //current player turn so we move
+            this.selectedPiece.moveTo(clickedCell);
+            this.clearSelection();
+        }
+        
     }else{
         //update position of the selected piece to new position
         if(this.selectedPiece){
@@ -133,51 +148,53 @@ Board.prototype.selectPiece = function(clickedElement, selectedPiece) {
 Board.prototype.initiateGame = function() {
     // Create white pieces
     this.whitePieces = {
-        king: new King({ color: 'white', position: 'E1' }),
-        queen: new Queen({ color: 'white', position: 'D1' }),
+        king: new King({ color: 'white', position: 'E1', board: this }),
+        queen: new Queen({ color: 'white', position: 'D1', board: this }),
         bishops: [
-            new Bishop({ color: 'white', position: 'C1' }),
-            new Bishop({ color: 'white', position: 'F1' })
+            new Bishop({ color: 'white', position: 'C1', board: this }),
+            new Bishop({ color: 'white', position: 'F1', board: this })
         ],
         knights: [
-            new Knight({ color: 'white', position: 'B1' }),
-            new Knight({ color: 'white', position: 'G1' })
+            new Knight({ color: 'white', position: 'B1', board: this }),
+            new Knight({ color: 'white', position: 'G1', board: this })
         ],
         rooks: [
-            new Rook({ color: 'white', position: 'A1' }),
-            new Rook({ color: 'white', position: 'H1' })
+            new Rook({ color: 'white', position: 'A1', board: this }),
+            new Rook({ color: 'white', position: 'H1', board: this })
         ],
         pawns: []
     };
 
     // Create white pawns
     for (let i = 0; i < 8; i++) {
-        this.whitePieces.pawns.push(new Pawn({ color: 'white', position: String.fromCharCode(65 + i) + '2' }));
+        this.whitePieces.pawns.push(new Pawn({ color: 'white', position: String.fromCharCode(65 + i) + '2', board: this }));
     }
 
     // Create black pieces
     this.blackPieces = {
-        king: new King({ color: 'black', position: 'E8' }),
-        queen: new Queen({ color: 'black', position: 'D8' }),
+        king: new King({ color: 'black', position: 'E8', board: this }),
+        queen: new Queen({ color: 'black', position: 'D8', board: this }),
         bishops: [
-            new Bishop({ color: 'black', position: 'C8' }),
-            new Bishop({ color: 'black', position: 'F8' })
+            new Bishop({ color: 'black', position: 'C8', board: this }),
+            new Bishop({ color: 'black', position: 'F8', board: this })
         ],
         knights: [
-            new Knight({ color: 'black', position: 'B8' }),
-            new Knight({ color: 'black', position: 'G8' })
+            new Knight({ color: 'black', position: 'B8', board: this }),
+            new Knight({ color: 'black', position: 'G8', board: this })
         ],
         rooks: [
-            new Rook({ color: 'black', position: 'A8' }),
-            new Rook({ color: 'black', position: 'H8' })
+            new Rook({ color: 'black', position: 'A8', board: this }),
+            new Rook({ color: 'black', position: 'H8', board: this })
         ],
         pawns: []
     };
 
     // Create black pawns
     for (let i = 0; i < 8; i++) {
-        this.blackPieces.pawns.push(new Pawn({ color: 'black', position: String.fromCharCode(65 + i) + '7' }));
+        this.blackPieces.pawns.push(new Pawn({ color: 'black', position: String.fromCharCode(65 + i) + '7', board: this }));
     }
+    
+    this.updateGameInfo();
 };
 
 Board.prototype.renderAllPieces = function() {
@@ -198,4 +215,26 @@ Board.prototype.renderAllPieces = function() {
             piece.render();
         }
     });
+};
+
+Board.prototype.invalidMove = function(){
+    this.selectedPiece = false;
+    const $invalidMoveElement = document.getElementById('invalid-move');
+    $invalidMoveElement.classList.remove('hidden');
+    setTimeout(() => {
+        $invalidMoveElement.classList.add('hidden');
+    }, 2000);
+};
+
+Board.prototype.switchPlayer = function(){
+    this.currentPlayer = this.currentPlayer === 'white' ? 'black' : 'white';
+    this.selectedPiece = false;
+    this.updateGameInfo();
+};
+
+Board.prototype.updateGameInfo = function() {
+    const $currentTurnElement = document.getElementById('current-turn');
+    $currentTurnElement.textContent = `Current Turn: ${this.currentPlayer}`;
+    $currentTurnElement.setAttribute('data-player', this.currentPlayer);
+    document.getElementById('invalid-move').classList.add('hidden');
 };

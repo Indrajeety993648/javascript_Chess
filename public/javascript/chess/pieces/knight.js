@@ -1,31 +1,42 @@
-//Knight Constructor
-var Knight = function(config) {
-    Piece.call(this, config);  // Call the parent constructor
-    this.type = 'knight';      // Set the type to 'knight'
+var Knight = function(config){
+    this.type = 'knight';
+    this.constructor(config);
 };
 
-Knight.prototype = Object.create(Piece.prototype);
-Knight.prototype.constructor = Knight;
 
-Knight.prototype.moveTo = function(targetPosition) {
-    const currentCol = this.position[0];                  
-    const currentRow = parseInt(this.position[1], 10);    
-    const targetCol = targetPosition.col;                 
-    const targetRow = parseInt(targetPosition.row, 10);   
 
-    // Calculate the column and row difference
-    const colDiff = Math.abs(currentCol.charCodeAt(0) - targetCol.charCodeAt(0));
-    const rowDiff = Math.abs(currentRow - targetRow);
+Knight.prototype = new Piece({});
 
-    if ((colDiff === 2 && rowDiff === 1) || (colDiff === 1 && rowDiff === 2)) {
-        this.position = targetCol + targetRow;  // Update the position
-        this.render();                          // Render the new position
-    } else {
-        console.warn("Invalid move for Knight");
+Knight.prototype.isValid = function (targetPosition){
+    let currentCol = this.position.charAt(0) 
+    let currentRow = parseInt(this.position.charAt(1)); 
+    let targetCol = targetPosition.col;
+    let targetRow = targetPosition.row; 
+    let targetPiece = this.board.getPieceAt(targetPosition);
+    if (
+        (Math.abs(targetCol.charCodeAt(0) - currentCol.charCodeAt(0)) === 2 && Math.abs(targetRow - currentRow) === 1) ||
+        (Math.abs(targetCol.charCodeAt(0) - currentCol.charCodeAt(0)) === 1 && Math.abs(targetRow - currentRow) === 2)
+    ) {
+        if(targetPiece && targetPiece.color !== this.color){
+            targetPiece.kill(targetPiece);
+        }
+        return true;
     }
-};
 
-Knight.prototype.render = function() {
-    Piece.prototype.render.call(this); 
-};
 
+    console.warn("Invalid move for knight");
+    return false;
+
+}
+
+
+Knight.prototype.moveTo = function(newPosition){
+
+    if(this.isValid(newPosition)){
+        this.position = newPosition.col + newPosition.row;
+        this.render();
+        this.board.switchPlayer();
+    } else {
+        this.board.invalidMove();
+    }
+}
