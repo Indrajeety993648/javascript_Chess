@@ -1,7 +1,7 @@
 // Rook Constructor
 var Rook = function(config) {
     this.type = 'rook';
-    Piece.call(this, config); // Call parent constructor
+    Piece.call(this, config); // Call the parent constructor (Piece)
 };
 
 // Inherit from Piece
@@ -27,7 +27,7 @@ Rook.prototype.isValidMove = function(targetPosition) {
         return false;
     }
 
-    // If move is horizontal or vertical, it's valid (ignoring board/blocking logic)
+    // If the move is horizontal or vertical, it's valid (ignoring board/blocking logic)
     return true;
 };
 
@@ -37,9 +37,11 @@ Rook.prototype.moveTo = function(targetPosition) {
     if (result === true) {
         // Move the rook to the new position
         this.position = targetPosition.col + targetPosition.row;
-        this.render();
+        this.render(); // Call the render method to update the piece's position
+        this.board.switchPlayer(); // Switch player after a valid move
         return true;
     }
+    this.board.invalidMove(); // Handle invalid move
     return false; // Invalid move
 };
 
