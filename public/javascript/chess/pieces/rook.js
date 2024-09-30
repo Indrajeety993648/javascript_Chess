@@ -1,67 +1,59 @@
-var Rook = function(config){
+// Rook Constructor
+var Rook = function(config) {
     this.type = 'rook';
-    this.constructor(config);
+    Piece.call(this, config); // Call the parent constructor (Piece)
 };
 
-Rook.prototype = new Piece({});
+// Inherit from Piece
+Rook.prototype = Object.create(Piece.prototype);
+Rook.prototype.constructor = Rook;
 
-Rook.prototype.isValidPosition = function(newPosition){
-    let currentCol = this.position.charAt(0);
-    let currentRow = parseInt(this.position.charAt(1));
-    
-    let newCol = newPosition.col;
-    let newRow = parseInt(newPosition.row);
-    let targetPiece = this.board.getPieceAt(newPosition);
+// Method to check if the move is valid for the rook
+Rook.prototype.isValidMove = function(targetPosition) {
+    if (!targetPosition || !targetPosition.col || !targetPosition.row) {
+        console.warn("Invalid target position");
+        return false;
+    }
 
-    const isHorizontalMove = (currentRow === newRow && currentCol !== newCol);
-    const isVerticalMove = (currentCol === newCol && currentRow !== newRow);
+    // Convert current and target positions to 0-based indices
+    let currentCol = this.position.charCodeAt(0) - 65; // Convert A-H to 0-7
+    let currentRow = parseInt(this.position.charAt(1)) - 1; // Convert 1-8 to 0-7
+    let targetCol = targetPosition.col.charCodeAt(0) - 65;
+    let targetRow = parseInt(targetPosition.row) - 1;
 
-    if (isHorizontalMove || isVerticalMove) {
+    // Check if the move is horizontal or vertical
+    if (currentCol !== targetCol && currentRow !== targetRow) {
+        console.warn("Invalid move for rook: not horizontal or vertical");
+        return false;
+    }
 
-        if (isHorizontalMove) {
-            let start = Math.min(currentCol.charCodeAt(0), newCol.charCodeAt(0)) - 63;
-            let end = Math.max(currentCol.charCodeAt(0), newCol.charCodeAt(0)) - 64;
-            for(let i = start; i < end; i++){
-                let targetPosition = {row: currentRow, col: String.fromCharCode(i + 64)};
-                let targetPiece = this.board.getPieceAt(targetPosition);
-                if(targetPiece) {
-                    console.warn("Invalid move for rook");
-                    return false;
-                }
-            }
-        }
+    // If the move is horizontal or vertical, it's valid (ignoring board/blocking logic)
+    return true;
+};
 
-        if (isVerticalMove) {
-            let start = Math.min(currentRow, newRow) + 1;
-            let end = Math.max(currentRow, newRow);
-            for(let i = start; i < end; i++){
-                let targetPosition = {row: i, col: newCol};
-                let targetPiece = this.board.getPieceAt(targetPosition);
-                if(targetPiece) {
-                    console.warn("Invalid move for rook");
-                    return false;
-                }
-            }
-        }
-
-        if (targetPiece && targetPiece.color !== this.color) {
-            targetPiece.kill(targetPiece);
-        }
-
+// Method to move the rook to the target position
+Rook.prototype.moveTo = function(targetPosition) {
+    const result = this.isValidMove(targetPosition);
+    if (result === true) {
+        // Move the rook to the new position
+        this.position = targetPosition.col + targetPosition.row;
+        this.render(); // Call the render method to update the piece's position
+        this.board.switchPlayer(); // Switch player after a valid move
         return true;
     }
+    this.board.invalidMove(); // Handle invalid move
+    return false; // Invalid move
+};
 
-    // Invalid move
-    console.warn("Invalid move for rook");
-    return false;
-}
-
-Rook.prototype.moveTo = function(newPosition){
-    if(this.isValidPosition(newPosition)){
-        this.position = newPosition.col + newPosition.row;
-        this.render();
-        this.board.switchPlayer();
-    } else {
-        this.board.invalidMove();
+// Method to "remove" the rook (capture)
+Rook.prototype.kill = function() {
+    if (this.$el && this.$el.parentNode) {
+        this.$el.parentNode.removeChild(this.$el);
     }
-}
+    this.position = null; // Clear the position
+};
+
+// Render method (inherits from Piece)
+Rook.prototype.render = function() {
+    Piece.prototype.render.call(this); // Call the parent render method
+};
